@@ -20,6 +20,7 @@ connection.connect(function(err) {
   console.log(`connection with ID ${connection.threadId}`);
   //call the functions
   runSearch();
+  Inventory();
 });
 
 function runSearch() {
@@ -105,3 +106,39 @@ function productSearch(){
     runSearch();
   });})}
 
+
+
+  // displayInventory will retrieve the current inventory 
+  //from the database and output it to the console
+function Inventory() {
+	// console.log('___ENTER displayInventory___');
+
+	// Construct the db query string
+	query = 'SELECT * FROM products';
+
+	// Make the db query
+	connection.query(query, function(err, res) {
+		if (err) throw err;
+
+		console.log('Existing Inventory: ');
+		console.log('...................\n');
+
+		var stringOutput = '';
+		for (var i = 0; i < res.length; i++) {
+			stringOutput = '';
+			stringOutput += 'Item ID: ' + res[i].item_id + '  //  ';
+			stringOutput += 'Product Name: ' + res[i].product_name + '  //  ';
+			stringOutput += 'Department: ' + res[i].department_name + '  //  ';
+      stringOutput += 'Price: $' + res[i].price + '\n';
+      stringOutput += 'Available Quantity: ' + res[i].stock_quantity + '\n';
+
+
+			console.log(stringOutput);
+		}
+
+	  	console.log("---------------------------------------------------------------------\n");
+
+	  	//Prompt the user for item/quantity they would like to purchase
+	  	ProductIDSearch();
+	})
+}
