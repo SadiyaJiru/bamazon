@@ -20,8 +20,10 @@ connection.connect(function(err) {
   if (err) throw err;
   console.log(`connection with ID ${connection.threadId}`);
   //call the functions
-  runSearch();
+  
   inventory();
+  runSearch()
+
 });
   // displayInventory will retrieve the current inventory 
   //from the database and output it to the console
@@ -33,21 +35,19 @@ connection.connect(function(err) {
     connection.query(query, function(err, res) {
       if (err) throw err;
   
-      console.log('............Existing Inventory................\n');
+      console.log('\n............Existing Inventory................\n');
   
       var stringOutput = '';
       for (var i = 0; i < res.length; i++) {
         stringOutput = '';
-        stringOutput += 'Item ID: ' + res[i].item_id + ' || ';
-        stringOutput += 'Product Name: ' + res[i].product_name + ' || ';
+        stringOutput += 'ID: ' + res[i].item_id + ' || ';
+        stringOutput += 'Product: ' + res[i].product_name + ' || ';
         stringOutput += 'Department: ' + res[i].department_name + ' || ';
         stringOutput += 'Price: $' + res[i].price + '\n';
-        stringOutput += 'Quantity In Stock: ' + res[i].stock_quantity + '\n';
+        stringOutput += 'Stock Quantity: ' + res[i].stock_quantity + '\n';
         console.log(stringOutput);
       } console.log("---------------------------------------------------------------------\n");
     })
-   
-
   }
 function runSearch() {
   inquirer
@@ -55,22 +55,18 @@ function runSearch() {
       name: "action",
       type: "list",
       message: "Welcome to bamazon, what would you like to do",
-      choices: ["Find product by ID", "Find product by name \n"] 
+      choices: ["Find product by ID"] 
     })
 .then(function(answer) {
   switch (answer.action) {
     case "Find product by ID":
     searchByID();
-    break;
-    case "Find product by name":
-    productSearch();
-    break;
+    break
   }
 });}
 //Finds the item by the Item ID / product ID
 function searchByID() {
   var customerTotal;
-
   //ask for the product id the user wants to search for
   inquirer
     .prompt([
@@ -90,36 +86,58 @@ function searchByID() {
         validate: function(value) {
           if (isNaN(value) === false) {
             return true;
+            
           }  return false;
+          
         }
       }
-    ])
+    ]) 
     .then(function(answer){
       connection.query('SELECT * FROM products WHERE item_id = ?', [answer.itemID], function(err, res){
-
         for (var i = 0; i < res.length; i++) {
           console.log('\nYour Cart [$]');
           console.log("Item ID: " + res[i].item_id + " || Product Name: " + res[i].product_name + " || price: $" + res[i].price + " || Order Quantity "+ answer.quantity);
-        }
-
+    }
         if(answer.quantity > res[0].stock_quantity){
         console.log('\n Sorry Item Is Out Of Stock');
         checkout();
-      }else{
-        customerTotal = res[0].price * answer.quantity;
-        currentDepartment = res[0].department_name;
-        console.log('\nThanks for your order');
-        console.log('You owe $' + customerTotal);
-        console.log('');
-        //update products table
-        connection.query('UPDATE products SET ? Where ?', [{
-          stock_quantity: res[0].stock_quantity - answer.quantity
-        },{
-          item_id: answer.itemID
-        }], function(err, res){});
-        //update departments table
-        // logSaleToDepartment();
-        checkout();
+      }
+      else
+      {
+        inquirer.prompt([{
+          type: 'confirm',
+          name: 'choice',
+          message: 'Would you like to confrim payment??'
+        }]).then(function(choiceanswer){
+  
+          if(choiceanswer.choice){
+
+            customerTotal = res[0].price * answer.quantity;
+            currentDepartment = res[0].department_name;
+            console.log('You owe $' + customerTotal);
+            console.log('');
+           // update products table
+            connection.query('UPDATE products SET ? Where ?', [{
+              stock_quantity: res[0].stock_quantity - answer.quantity
+            },
+            {
+              item_id: answer.itemID
+            }], function(err, res){});
+
+
+
+
+          console.log('Thank you for shopping at Bamazon! Enjoy your product \n');
+          checkout();
+  
+          }
+          else{
+            console.log('Thank you for shopping at Bamazon!');
+            connection.end();
+          }
+        })
+
+      
       }
     })})}
     function checkout(){
@@ -132,9 +150,8 @@ function searchByID() {
           searchByID();
         }
         else{
-          console.log('Thank you for shopping at Bamazon!');
+          console.log('Thank you for visiting Bamazon, See you soon!');
           connection.end();
         }
       })
     };
-    
