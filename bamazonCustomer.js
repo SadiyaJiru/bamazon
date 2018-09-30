@@ -13,14 +13,8 @@ var connection = mysql.createConnection({
 
   // Your password
   password: "",
-  database: "bamazon"
+  database: "Bamazon"
 });
-
-
-
-var amountOwed;
-var currentDepartment;
-var updateSales;
 
 connection.connect(function(err) {
   if (err) throw err;
@@ -66,7 +60,7 @@ function runSearch() {
 .then(function(answer) {
   switch (answer.action) {
     case "Find product by ID":
-    ProductIDSearch();
+    searchByID();
     break;
     case "Find product by name":
     productSearch();
@@ -74,7 +68,9 @@ function runSearch() {
   }
 });}
 //Finds the item by the Item ID / product ID
-function ProductIDSearch() {
+function searchByID() {
+  var customerTotal;
+
   //ask for the product id the user wants to search for
   inquirer
     .prompt([
@@ -110,10 +106,10 @@ function ProductIDSearch() {
         console.log('\n Sorry Item Is Out Of Stock');
         checkout();
       }else{
-        amountOwed = res[0].price * answer.quantity;
+        customerTotal = res[0].price * answer.quantity;
         currentDepartment = res[0].department_name;
         console.log('\nThanks for your order');
-        console.log('You owe $' + amountOwed);
+        console.log('You owe $' + customerTotal);
         console.log('');
         //update products table
         connection.query('UPDATE products SET ? Where ?', [{
@@ -133,7 +129,7 @@ function ProductIDSearch() {
         message: 'Would you like to place another order?'
       }]).then(function(answer){
         if(answer.choice){
-          ProductIDSearch();
+          searchByID();
         }
         else{
           console.log('Thank you for shopping at Bamazon!');
