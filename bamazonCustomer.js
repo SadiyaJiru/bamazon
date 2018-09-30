@@ -99,7 +99,7 @@ function searchByID() {
           console.log("Item ID: " + res[i].item_id + " || Product Name: " + res[i].product_name + " || price: $" + res[i].price + " || Order Quantity "+ answer.quantity);
     }
         if(answer.quantity > res[0].stock_quantity){
-        console.log('\n Sorry Item Is Out Of Stock');
+        console.log('\n Sorry Item Is Out Of Stock \n');
         checkout();
       }
       else
