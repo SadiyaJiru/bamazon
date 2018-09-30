@@ -15,18 +15,23 @@ var connection = mysql.createConnection({
   password: "",
   database: "bamazon"
 });
+
+
+
+var amountOwed;
+var currentDepartment;
+var updateSales;
+
 connection.connect(function(err) {
   if (err) throw err;
   console.log(`connection with ID ${connection.threadId}`);
   //call the functions
   runSearch();
-  Inventory();
+  inventory();
 });
   // displayInventory will retrieve the current inventory 
   //from the database and output it to the console
-  function Inventory() {
-    // console.log('___ENTER displayInventory___');
-  
+  function inventory() {
     // Construct the db query string
     query = 'SELECT * FROM products';
   
@@ -44,21 +49,12 @@ connection.connect(function(err) {
         stringOutput += 'Department: ' + res[i].department_name + ' || ';
         stringOutput += 'Price: $' + res[i].price + '\n';
         stringOutput += 'Quantity In Stock: ' + res[i].stock_quantity + '\n';
-  
-  
         console.log(stringOutput);
-      }
-  
-        console.log("---------------------------------------------------------------------\n");
-  
-        //Prompt the user for item/quantity they would like to purchase
-        // ProductIDSearch();
+      } console.log("---------------------------------------------------------------------\n");
     })
+   
+
   }
-
-
-
-
 function runSearch() {
   inquirer
     .prompt({
@@ -67,19 +63,16 @@ function runSearch() {
       message: "Welcome to bamazon, what would you like to do",
       choices: ["Find product by ID", "Find product by name \n"] 
     })
-
 .then(function(answer) {
   switch (answer.action) {
     case "Find product by ID":
     ProductIDSearch();
     break;
-
     case "Find product by name":
     productSearch();
     break;
   }
-});
-}
+});}
 //Finds the item by the Item ID / product ID
 function ProductIDSearch() {
   //ask for the product id the user wants to search for
@@ -92,54 +85,60 @@ function ProductIDSearch() {
         validate: function(value) {
           if (isNaN(value) === false) {
             return true;
-          }
-          return false;
+          } return false;
         }
-        
-      },
-      {
+      },{
         name: "quantity",
         type: "input",
         message: "Enter quantity: ",
         validate: function(value) {
           if (isNaN(value) === false) {
             return true;
-          }
-          return false;
+          }  return false;
         }
       }
     ])
     .then(function(answer){
-      var query = "SELECT item_id, product_name, price FROM products WHERE item_id = ?";
+      connection.query('SELECT * FROM products WHERE item_id = ?', [answer.itemID], function(err, res){
 
-      //Display the Product ID, Product name, Price, and the quantity the user wants to buy
-        connection.query(query, [answer.itemID, answer.quantity], function(err, res){
         for (var i = 0; i < res.length; i++) {
+          console.log('\nYour Cart [$]');
           console.log("Item ID: " + res[i].item_id + " || Product Name: " + res[i].product_name + " || price: $" + res[i].price + " || Order Quantity "+ answer.quantity);
         }
-        runSearch();
-      });})}
 
-      
-
-//find product my product name, not a good search since name has to match exactly
-function productSearch(){
-  inquirer
-  .prompt({
-  name: "product",
-  type:"input",
-  message: "Enter product name?"
-
-})
-.then(function(answer){
-  var query = "SELECT item_id, product_name, price, stock_quantity FROM products WHERE ?";
-
-  connection.query(query, {product_name: answer.product}, function(err, res){
-
-    for (var i = 0; i < res.length; i++) {
-      console.log("Item ID: " + res[i].item_id + " || Product Name: " + res[i].product_name + " || price: $" + res[i].price + " || stock_quantity "+ res[i].stock_quantity);
-    }
-    runSearch();
-  });})}
-
-
+        if(answer.quantity > res[0].stock_quantity){
+        console.log('\n Sorry Item Is Out Of Stock');
+        checkout();
+      }else{
+        amountOwed = res[0].price * answer.quantity;
+        currentDepartment = res[0].department_name;
+        console.log('\nThanks for your order');
+        console.log('You owe $' + amountOwed);
+        console.log('');
+        //update products table
+        connection.query('UPDATE products SET ? Where ?', [{
+          stock_quantity: res[0].stock_quantity - answer.quantity
+        },{
+          item_id: answer.itemID
+        }], function(err, res){});
+        //update departments table
+        // logSaleToDepartment();
+        checkout();
+      }
+    })})}
+    function checkout(){
+      inquirer.prompt([{
+        type: 'confirm',
+        name: 'choice',
+        message: 'Would you like to place another order?'
+      }]).then(function(answer){
+        if(answer.choice){
+          ProductIDSearch();
+        }
+        else{
+          console.log('Thank you for shopping at Bamazon!');
+          connection.end();
+        }
+      })
+    };
+    
